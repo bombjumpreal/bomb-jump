@@ -1,0 +1,574 @@
+
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BOMB JUMP - Admin</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090b11;color:#fff;font-family:Arial,sans-serif}
+header{padding:22px 5%;background:#151923;border-bottom:1px solid #303746;display:flex;justify-content:space-between;align-items:center}
+h1{font-size:22px;letter-spacing:2px;margin:0}
+h1 span{color:#ff3045}
+main{width:94%;max-width:1400px;margin:30px auto}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+button{cursor:pointer;border:0;border-radius:7px;padding:11px 15px;font-weight:bold}
+button:disabled{opacity:.5;cursor:not-allowed}
+.tabs button{background:#252c3a;color:#fff}
+.tabs button.active{background:#ff3045}
+.panel{background:#151923;border:1px solid #303746;border-radius:12px;padding:18px;margin-bottom:20px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:850px}
+th,td{padding:12px;text-align:left;border-bottom:1px solid #303746;font-size:13px;vertical-align:middle}
+th{color:#ff6474;white-space:nowrap}
+.action{background:#168b62;color:#fff;margin:2px}
+.danger{background:#b92338;color:#fff;margin:2px}
+.neutral{background:#354054;color:#fff;margin:2px}
+small{color:#aab0bf}
+.section{display:none}
+.section.active{display:block}
+a{color:#62aaff}
+#message{padding:12px;background:#151923;border-radius:8px;border:1px solid #303746}
+.empty{text-align:center;color:#aab0bf;padding:22px}
+.status{font-weight:bold}
+.pending{color:#ffc857}
+.approved{color:#43d49b}
+.rejected{color:#ff6474}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar button{background:#354054;color:white}
+@media(max-width:600px){
+  header{padding:16px 4%}
+  h1{font-size:17px}
+  main{margin:18px auto}
+  .panel{padding:12px}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>BOMB <span>JUMP</span> ADMIN</h1>
+  <a href="/">SAYTA QAYIT</a>
+</header>
+
+<main>
+
+<div class="tabs">
+  <button class="active" data-tab="users">İSTİFADƏÇİLƏR</button>
+  <button data-tab="requests">DEPOZİT / ÇIXARIŞ</button>
+  <button data-tab="games">OYUN TARİXÇƏSİ</button>
+  <button data-tab="balances">BALANS TARİXÇƏSİ</button>
+</div>
+
+<p id="message">Məlumatlar yüklənir...</p>
+
+<section id="users" class="section active">
+  <div class="panel">
+    <div class="toolbar">
+      <h2>İstifadəçilər</h2>
+      <button onclick="loadAdmin()">Yenilə</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>İstifadəçi</th>
+          <th>Email</th>
+          <th>Balans</th>
+          <th>Rezerv</th>
+          <th>Qeydiyyat</th>
+          <th>Əməliyyat</th>
+        </tr>
+      </thead>
+      <tbody id="usersBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="requests" class="section">
+  <div class="panel">
+    <div class="toolbar">
+      <h2>Depozit və çıxarış müraciətləri</h2>
+      <button onclick="loadAdmin()">Yenilə</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>İstifadəçi</th>
+          <th>Növ</th>
+          <th>Məbləğ</th>
+          <th>Üsul</th>
+          <th>Məlumat</th>
+          <th>Qəbz</th>
+          <th>Status</th>
+          <th>Tarix</th>
+          <th>Əməliyyat</th>
+        </tr>
+      </thead>
+      <tbody id="requestsBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="games" class="section">
+  <div class="panel">
+    <div class="toolbar">
+      <h2>Oyun tarixçəsi</h2>
+      <button onclick="loadAdmin()">Yenilə</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>İstifadəçi</th>
+          <th>Nəticə</th>
+          <th>Mərc</th>
+          <th>Mərhələ</th>
+          <th>Əmsal</th>
+          <th>Qazanc</th>
+          <th>Tarix</th>
+        </tr>
+      </thead>
+      <tbody id="gamesBody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section id="balances" class="section">
+  <div class="panel">
+    <div class="toolbar">
+      <h2>Balans dəyişiklik tarixçəsi</h2>
+      <button onclick="loadAdmin()">Yenilə</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>İstifadəçi</th>
+          <th>Əməliyyat</th>
+          <th>Məbləğ</th>
+          <th>Əvvəl</th>
+          <th>Sonra</th>
+          <th>Səbəb</th>
+          <th>Tarix</th>
+        </tr>
+      </thead>
+      <tbody id="balancesBody"></tbody>
+    </table>
+  </div>
+</section>
+
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+
+let adminData = {
+  users: [],
+  requests: [],
+  games: [],
+  balanceHistory: []
+};
+
+function safe(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[c]);
+}
+
+function date(value) {
+  if (!value) return "-";
+
+  const d = new Date(value);
+
+  return Number.isNaN(d.getTime())
+    ? "-"
+    : d.toLocaleString("az-AZ");
+}
+
+function money(value) {
+  const n = Number(value);
+
+  return Number.isFinite(n)
+    ? n.toFixed(2)
+    : "0.00";
+}
+
+async function request(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options,
+    headers: {
+      ...(options.body ? {"Content-Type":"application/json"} : {}),
+      ...(options.headers || {})
+    }
+  });
+
+  let data;
+
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error("Server cavabı oxunmadı. server.js faylını yoxla.");
+  }
+
+  if (response.status === 401 || response.status === 403) {
+    throw new Error("Admin giriş icazəsi yoxdur. Admin hesabı ilə daxil ol.");
+  }
+
+  if (!response.ok || !data.success) {
+    throw new Error(data.message || "Xəta baş verdi.");
+  }
+
+  return data;
+}
+
+function showEmpty(id, columns, message) {
+  $(id).innerHTML =
+    `<tr><td class="empty" colspan="${columns}">${safe(message)}</td></tr>`;
+}
+
+async function loadAdmin() {
+  $("message").textContent = "Məlumatlar yüklənir...";
+
+  try {
+    const data = await request("/api/admin/data");
+
+    adminData = {
+      users: Array.isArray(data.users) ? data.users : [],
+      requests: Array.isArray(data.requests) ? data.requests : [],
+      games: Array.isArray(data.games) ? data.games : [],
+      balanceHistory: Array.isArray(data.balanceHistory)
+        ? data.balanceHistory
+        : []
+    };
+
+    renderUsers();
+    renderRequests();
+    renderGames();
+    renderBalances();
+
+    const pending = adminData.requests.filter(x => x.status === "pending").length;
+
+    $("message").textContent =
+      `Məlumatlar yeniləndi. İstifadəçi: ${adminData.users.length} | Gözləyən müraciət: ${pending}`;
+
+  } catch (error) {
+    $("message").textContent = error.message;
+
+    showEmpty("usersBody",7,"Məlumat yüklənmədi.");
+    showEmpty("requestsBody",10,"Məlumat yüklənmədi.");
+    showEmpty("gamesBody",8,"Məlumat yüklənmədi.");
+    showEmpty("balancesBody",8,"Məlumat yüklənmədi.");
+  }
+}
+
+// İSTİFADƏÇİLƏR
+
+function renderUsers() {
+  if (!adminData.users.length) {
+    return showEmpty("usersBody",7,"İstifadəçi tapılmadı.");
+  }
+
+  $("usersBody").innerHTML = adminData.users.map(user => {
+    const isAdmin =
+      String(user.email || "").toLowerCase() === "bombjumpreal@gmail.com";
+
+    return `
+      <tr>
+        <td>${safe(user.id)}</td>
+        <td>${safe(user.username)}</td>
+        <td>${safe(user.email)}</td>
+        <td>${money(user.balance)} AZN</td>
+        <td>${money(user.reserved_balance)} AZN</td>
+        <td>${date(user.created_at)}</td>
+        <td>
+          ${isAdmin ? `<small>Admin hesabı</small>` : `
+            <button class="action"
+              onclick="changeBalance(${Number(user.id)},'add')">
+              + Artır
+            </button>
+
+            <button class="danger"
+              onclick="changeBalance(${Number(user.id)},'subtract')">
+              − Azalt
+            </button>
+          `}
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+// BALANS ARTIR / AZALT
+
+async function changeBalance(id, action) {
+  if (!Number.isInteger(id) || id < 1) {
+    return alert("İstifadəçi ID-si yanlışdır.");
+  }
+
+  const amountText = prompt(
+    action === "add"
+      ? "Neçə AZN artırmaq istəyirsən?"
+      : "Neçə AZN azaltmaq istəyirsən?"
+  );
+
+  if (amountText === null) return;
+
+  const amount = Number(amountText.trim().replace(",", "."));
+
+  if (
+    !Number.isFinite(amount) ||
+    amount < 1 ||
+    amount > 10000 ||
+    Math.round(amount * 100) !== amount * 100
+  ) {
+    return alert("1-10000 AZN arasında, maksimum 2 rəqəmli məbləğ yaz.");
+  }
+
+  const reason = prompt("Qeyd / səbəb yaz:");
+
+  if (reason === null) return;
+
+  if (!reason.trim()) {
+    return alert("Qeyd boş ola bilməz.");
+  }
+
+  const confirmText =
+    `${money(amount)} AZN balans ${action === "add" ? "artırılsın" : "azaldılsın"}?`;
+
+  if (!confirm(confirmText)) return;
+
+  try {
+    const result = await request(`/api/admin/users/${id}/balance`, {
+      method: "POST",
+      body: JSON.stringify({
+        amount,
+        action,
+        reason: reason.trim()
+      })
+    });
+
+    alert(
+      `${result.message}\nYeni balans: ${money(result.balance)} AZN`
+    );
+
+    await loadAdmin();
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+// STATUS GÖRÜNÜŞÜ
+
+function statusLabel(status) {
+  const names = {
+    pending: "Gözləyir",
+    approved: "Təsdiqləndi",
+    rejected: "Rədd edildi"
+  };
+
+  const classes = {
+    pending: "pending",
+    approved: "approved",
+    rejected: "rejected"
+  };
+
+  return `
+    <span class="status ${classes[status] || ""}">
+      ${safe(names[status] || status)}
+    </span>
+  `;
+}
+
+// DEPOZİT / ÇIXARIŞ
+
+function renderRequests() {
+  if (!adminData.requests.length) {
+    return showEmpty("requestsBody",10,"Hələ müraciət yoxdur.");
+  }
+
+  $("requestsBody").innerHTML = adminData.requests.map(item => `
+    <tr>
+      <td>${safe(item.id)}</td>
+
+      <td>
+        ${safe(item.username)}
+        <br>
+        <small>${safe(item.email)}</small>
+      </td>
+
+      <td>
+        ${item.type === "deposit"
+          ? "Depozit"
+          : item.type === "withdraw"
+            ? "Çıxarış"
+            : safe(item.type)}
+      </td>
+
+      <td>${money(item.amount)} AZN</td>
+
+      <td>${safe(item.method)}</td>
+
+      <td>${safe(item.details)}</td>
+
+      <td>
+        ${item.receipt_image
+          ? `<a href="${safe(item.receipt_image)}" target="_blank" rel="noopener">Qəbzi aç</a>`
+          : "-"}
+      </td>
+
+      <td>${statusLabel(item.status)}</td>
+
+      <td>${date(item.created_at)}</td>
+
+      <td>
+        ${item.status === "pending" ? `
+          <button class="action"
+            onclick="reviewRequest(${Number(item.id)},'approved')">
+            Təsdiqlə
+          </button>
+
+          <button class="danger"
+            onclick="reviewRequest(${Number(item.id)},'rejected')">
+            Rədd et
+          </button>
+        ` : "-"}
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function reviewRequest(id, status) {
+  const item = adminData.requests.find(
+    x => Number(x.id) === Number(id)
+  );
+
+  if (!item) return alert("Müraciət tapılmadı.");
+
+  let question;
+
+  if (status === "approved" && item.type === "deposit") {
+    question =
+      `${money(item.amount)} AZN depozit təsdiqlənsin və istifadəçinin balansına əlavə olunsun?`;
+  } else if (status === "approved" && item.type === "withdraw") {
+    question =
+      `${money(item.amount)} AZN çıxarış təsdiqlənsin? Faktiki köçürməni ayrıca etməlisən.`;
+  } else {
+    question =
+      "Müraciət rədd edilsin? Çıxarışdırsa rezerv edilmiş məbləğ istifadəçiyə qaytarılacaq.";
+  }
+
+  if (!confirm(question)) return;
+
+  try {
+    const result = await request(
+      `/api/admin/requests/${id}/status`,
+      {
+        method: "POST",
+        body: JSON.stringify({ status })
+      }
+    );
+
+    alert(result.message || "Müraciət yeniləndi.");
+
+    await loadAdmin();
+
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+// OYUN TARİXÇƏSİ
+
+function renderGames() {
+  if (!adminData.games.length) {
+    return showEmpty("gamesBody",8,"Oyun tarixçəsi yoxdur.");
+  }
+
+  $("gamesBody").innerHTML = adminData.games.map(item => `
+    <tr>
+      <td>${safe(item.id)}</td>
+
+      <td>
+        ${safe(item.username)}
+        <br>
+        <small>${safe(item.email)}</small>
+      </td>
+
+      <td>${safe(item.outcome)}</td>
+      <td>${money(item.stake)} AZN</td>
+      <td>${safe(item.stage)}</td>
+      <td>${money(item.multiplier)}x</td>
+      <td>${money(item.winnings)} AZN</td>
+      <td>${date(item.created_at)}</td>
+    </tr>
+  `).join("");
+}
+
+// BALANS TARİXÇƏSİ
+
+function renderBalances() {
+  if (!adminData.balanceHistory.length) {
+    return showEmpty("balancesBody",8,"Balans dəyişiklik tarixçəsi yoxdur.");
+  }
+
+  $("balancesBody").innerHTML = adminData.balanceHistory.map(item => `
+    <tr>
+      <td>${safe(item.id)}</td>
+
+      <td>
+        ${safe(item.username)}
+        <br>
+        <small>${safe(item.email)}</small>
+      </td>
+
+      <td>
+        ${item.action === "add"
+          ? "Artırıldı"
+          : item.action === "subtract"
+            ? "Azaldıldı"
+            : safe(item.action)}
+      </td>
+
+      <td>${money(item.amount)} AZN</td>
+      <td>${money(item.balance_before)} AZN</td>
+      <td>${money(item.balance_after)} AZN</td>
+      <td>${safe(item.reason)}</td>
+      <td>${date(item.created_at)}</td>
+    </tr>
+  `).join("");
+}
+
+// TABLAR
+
+document.querySelectorAll("[data-tab]").forEach(button => {
+  button.addEventListener("click", () => {
+    document.querySelectorAll("[data-tab]").forEach(b =>
+      b.classList.remove("active")
+    );
+
+    document.querySelectorAll(".section").forEach(s =>
+      s.classList.remove("active")
+    );
+
+    button.classList.add("active");
+    $(button.dataset.tab).classList.add("active");
+  });
+});
+
+loadAdmin();
+</script>
+
+</body>
+</html>
